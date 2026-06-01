@@ -17,8 +17,20 @@ jobs:
           curl -L -o ${{ github.workspace }}/app.deb "${{ github.event.inputs.deb }}"
           dpkg-deb -X ${{ github.workspace }}/app.deb ${{ github.workspace }}/app
 
+          # Debug: Check what was extracted
+          echo "Contents of extracted deb:"
+          find ${{ github.workspace }}/app -type f | head -20
+
           mkdir -p ${{ github.workspace }}/ipa/Payload
-          cp -R ${{ github.workspace }}/app/Applications/* ${{ github.workspace }}/ipa/Payload
+          
+          # Check if Applications directory exists before copying
+          if [ -d "${{ github.workspace }}/app/Applications" ]; then
+            cp -R ${{ github.workspace }}/app/Applications/* ${{ github.workspace }}/ipa/Payload
+          else
+            echo "Warning: Applications directory not found"
+            # Find and copy all .app bundles instead
+            find ${{ github.workspace }}/app -name "*.app" -type d -exec cp -R {} ${{ github.workspace }}/ipa/Payload \;
+          fi
           
           cd ${{ github.workspace }}/ipa
           zip -r ${{ github.workspace }}/App.ipa .
